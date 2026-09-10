@@ -1,15 +1,30 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { DEFAULT_BUDGET, analyse, type Node } from "./detect/engine";
+import { DETECTORS } from "./detect/registry";
+import { systemClock } from "./detect/types";
+import { ProveIt } from "./ui/ProveIt";
+import { Tree } from "./ui/Tree";
 
 /**
- * The shell. One input, and a place for what comes out of it.
+ * One input, and everything that follows from it.
  *
- * The detection engine is not wired in yet; this exists so the privacy layers can be built
- * and tested against a real page first. That order is deliberate: a Content-Security-Policy
- * added after the features is a policy shaped around whatever the features happened to
- * need, and every exception in it was already load-bearing by the time anyone looked.
+ * There is no button to press. Analysis is synchronous and bounded by a 50ms deadline, so
+ * it runs on every keystroke and the result is always of what is in the box right now. A
+ * submit button here would only be a way to make the page feel like a form.
  */
 export function App() {
   const [text, setText] = useState("");
+  /** Seeds the reader asked to expand, each with a budget of its own. */
+  const [expanded, setExpanded] = useState<string[]>([]);
+
+  const results = useMemo(
+    () => [text, ...expanded].filter((t) => t.trim() !== "").map((t) => analyse(t, DETECTORS, systemClock, DEFAULT_BUDGET)),
+    [text, expanded],
+  );
+
+  const onExpand = (node: Node) => setExpanded((prev) => (prev.includes(node.text) ? prev : [...prev, node.text]));
+
+  const empty = text.trim() === "";
 
   return (
     <main className="page">
@@ -25,7 +40,12 @@ export function App() {
       <textarea
         className="input"
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          setText(e.target.value);
+          // A new input makes previous expansions meaningless, and leaving them on screen
+          // under a different value would be worse than losing them.
+          setExpanded([]);
+        }}
         placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
         spellCheck={false}
         autoCapitalize="off"
@@ -36,20 +56,23 @@ export function App() {
 
       <div className="meta">
         <span data-testid="count">{text.length} characters</span>
+        {!empty && (
+          <span data-testid="found">
+            {results.reduce((n, r) => n + r.nodes.filter((x) => x.findings.length > 0).length, 0)} reading
+            {results.reduce((n, r) => n + r.nodes.filter((x) => x.findings.length > 0).length, 0) === 1 ? "" : "s"}
+          </span>
+        )}
       </div>
 
       <section className="findings" data-testid="findings">
-        {text.trim() === "" ? (
-          <p className="empty">
-            Nothing pasted yet. Whatever you put in the box stays in the box.
-          </p>
+        {empty ? (
+          <p className="empty">Nothing pasted yet. Whatever you put in the box stays in the box.</p>
         ) : (
-          <p className="empty" data-testid="pending">
-            Detection is not wired up yet, so this is only holding {text.trim().length}{" "}
-            characters and telling you so.
-          </p>
+          results.map((r, i) => <Tree key={i} result={r} onExpand={onExpand} />)
         )}
       </section>
+
+      <ProveIt />
     </main>
   );
 }

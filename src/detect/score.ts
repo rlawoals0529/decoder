@@ -79,14 +79,25 @@ export function rank(findings: readonly { finding: Finding; prior: number }[]): 
 }
 
 /**
- * Which findings are peers of the top one, and therefore shown joined by "or".
+ * Kinds that are shown whenever they fire, however far behind they score.
  *
- * Always returns at least the leader when there is one. The point is that a reader sees
- * "MD5 or UUID" rather than a chosen winner with the alternative hidden behind a control
- * they will not open.
+ * `number` is not competing with the other readings, it is the null hypothesis, and it has
+ * a different job: rendering the boring answer is what makes the interesting answer
+ * trustworthy. Without this it was filtered out by the window on exactly the input it
+ * exists for, because a plausible date beats a plain integer by about thirteen bits, and
+ * `1789203600` showed only as a timestamp. A tool that offers only the exciting reading is
+ * wrong the first time somebody pastes a quantity.
+ */
+const ALWAYS_SHOWN = new Set(["number"]);
+
+/**
+ * Which findings are shown: peers of the leader, plus the baseline.
+ *
+ * A reader sees "MD5 or UUID" rather than a chosen winner with the alternative behind a
+ * control they will not open. Always returns at least the leader when there is one.
  */
 export function peers(scored: readonly Scored[]): Scored[] {
   const top = scored[0];
   if (!top) return [];
-  return scored.filter((f) => top.bits - f.bits <= PEER_WINDOW);
+  return scored.filter((f) => top.bits - f.bits <= PEER_WINDOW || ALWAYS_SHOWN.has(f.kind));
 }

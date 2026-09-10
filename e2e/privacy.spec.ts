@@ -153,9 +153,13 @@ test("the page works with the network cut off, which is the honest version of th
   // static site can be re-fetched from nothing, which is a question about caching and not
   // about this app. The claim being tested is that once it is open it needs no network, so
   // the test is: cut the cord, then use it.
-  await page.getByTestId("input").fill("still works offline");
-  await expect(page.getByTestId("count")).toContainText("19");
-  await expect(page.getByTestId("pending")).toBeVisible();
+  // A real reading, not just a character count: the whole engine has to work with no
+  // network, and asserting the count alone would pass against a page that had stopped
+  // detecting anything.
+  await page.getByTestId("input").fill("1789203600");
+  await expect(page.getByTestId("count")).toContainText("10");
+  await expect(page.getByTestId("finding-timestamp")).toBeVisible();
+  await expect(page.getByTestId("finding-number")).toBeVisible();
 
   await context.setOffline(false);
 });

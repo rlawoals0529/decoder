@@ -189,12 +189,16 @@ describe("scoring", () => {
   });
 
   it("peers are everything within the window of the leader, never fewer than one", () => {
+    // Baseline kinds are deliberately excluded here: they are shown however far behind they
+    // score, which is the next test. Mixing them in would make this property assert the
+    // opposite of the rule it is checking.
+    const KINDS = ["uuid", "hex", "jwt", "json", "url", "ip", "colour", "cidr"] as const;
     fc.assert(
       fc.property(fc.array(fc.integer({ min: 2, max: MAX_BITS }), { minLength: 1, maxLength: 8 }), (all) => {
         const scored = rank(
           all.map((bits, i) => ({
             finding: {
-              kind: (["uuid", "hex", "jwt", "json", "url", "number", "ip", "colour"] as const)[i] ?? "number",
+              kind: KINDS[i] ?? "cidr",
               text: "x",
               evidence: [{ note: "n", bits }],
               proves: "a long enough sentence",
@@ -210,6 +214,19 @@ describe("scoring", () => {
       }),
       { numRuns: 200 },
     );
+  });
+
+  it("the plain-number baseline is shown however far behind it scores", () => {
+    // The null hypothesis has to be visible rather than absent. A plausible date beats a
+    // plain integer by about thirteen bits, so the window alone hid it on exactly the input
+    // it exists for, and 1789203600 read only as a timestamp.
+    const mk = (kind: "timestamp" | "number", bits: number) => ({
+      finding: { kind, text: "1789203600", evidence: [{ note: "n", bits }], proves: "a long enough sentence", caveats: [] },
+      prior: 0,
+    });
+    const shown = peers(rank([mk("timestamp", 16), mk("number", 2)])).map((f) => f.kind);
+    expect(shown).toContain("timestamp");
+    expect(shown).toContain("number");
   });
 });
 
