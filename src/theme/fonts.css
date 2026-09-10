@@ -1,0 +1,65 @@
+/* The two faces, served from this origin.
+ *
+ * Every other page in this family loads them from Google Fonts, which is two requests to
+ * someone else's server carrying your IP address and the page you were on. For a tool whose
+ * whole claim is that it sends your data nowhere, that is the one request that would make
+ * the claim false, and no amount of README would fix it.
+ *
+ * So they are here: 110 KB of woff2 across four files, and `default-src 'none'` in the
+ * Content-Security-Policy can then mean what it says. It is also what makes the page work
+ * with the network switched off, which is the test worth running.
+ *
+ * Archivo and JetBrains Mono are both SIL Open Font License 1.1. Variable weight axes, so
+ * one file per subset covers every weight the page uses.
+ *
+ * They live beside this file rather than in `public/`, which matters for a reason worth
+ * recording: a `public/` asset is referenced by a root-absolute path, and this page is
+ * built with a relative base so it can be served from a repository subpath. Vite left the
+ * path untouched, so the built stylesheet asked for a directory two levels above the site
+ * root and every face 404'd. Referenced from here they are ordinary assets, so Vite hashes
+ * them and rewrites the URL correctly whatever the base is.
+ */
+
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/archivo-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/archivo-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("./fonts/jetbrains-mono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("./fonts/jetbrains-mono-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
