@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_BUDGET, analyse, type Node } from "./detect/engine";
-import { isEmbedded, onPaste } from "./embed";
+import { announceReady, isEmbedded, onPaste } from "./embed";
 import { DETECTORS } from "./detect/registry";
 import { systemClock } from "./detect/types";
 import { ProveIt } from "./ui/ProveIt";
@@ -29,16 +29,19 @@ export function App() {
   // Summoned rather than visited: a widget host pushes the clipboard in when the overlay
   // is shown, so a token is already decoded by the time the window appears. No listener at
   // all without ?embed=1.
-  useEffect(
-    () =>
-      onPaste((incoming) => {
-        setText(incoming);
-        setExpanded([]);
-        box.current?.focus();
-        box.current?.select();
-      }),
-    [],
-  );
+  useEffect(() => {
+    const stop = onPaste((incoming) => {
+      setText(incoming);
+      setExpanded([]);
+      box.current?.focus();
+      box.current?.select();
+    });
+    // After the listener, never before. The host waits for this rather than pushing on the
+    // iframe's load event, which fires while this effect has not run yet: the clipboard was
+    // posted into a page with nobody listening, and the overlay opened empty.
+    announceReady();
+    return stop;
+  }, []);
 
   const empty = text.trim() === "";
   const embedded = isEmbedded();

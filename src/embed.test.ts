@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isEmbedded, isPasteMessage, onPaste } from "./embed";
+import { announceReady, isEmbedded, isPasteMessage, onPaste } from "./embed";
 
 describe("isEmbedded", () => {
   it("is only true for the exact opt-in", () => {
@@ -89,5 +89,36 @@ describe("onPaste", () => {
     onPaste((t) => seen.push(t), "?embed=1", target)();
     post(target, { type: "hikari:paste", text: "after" });
     expect(seen).toEqual([]);
+  });
+});
+
+describe("announceReady", () => {
+  const spy = () => {
+    const sent: unknown[] = [];
+    return { window: { postMessage: (m: unknown) => sent.push(m) } as unknown as Window, sent };
+  };
+
+  it("says nothing when the page is not embedded", () => {
+    // A browser tab has no host to tell. Posting to whatever is above it would be the one
+    // outbound message this app makes, sent for no reason.
+    const host = spy();
+    announceReady("", host.window);
+    expect(host.sent).toEqual([]);
+  });
+
+  it("says nothing when there is no parent, or the parent is this page", () => {
+    const host = spy();
+    announceReady("?embed=1", null);
+    announceReady("?embed=1", globalThis.self);
+    expect(host.sent).toEqual([]);
+  });
+
+  it("carries no data, only the fact that the page exists", () => {
+    // The property the widget frame's comment depends on: text goes in, and what comes back
+    // out is not data. A field added here would quietly make that untrue.
+    const host = spy();
+    announceReady("?embed=1", host.window);
+    expect(host.sent).toEqual([{ type: "hikari:ready" }]);
+    expect(Object.keys(host.sent[0] as object)).toEqual(["type"]);
   });
 });

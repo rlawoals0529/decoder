@@ -47,6 +47,26 @@ export function isPasteMessage(data: unknown): data is PasteMessage {
 }
 
 /**
+ * Tell the host this page is listening.
+ *
+ * The frame used to push the clipboard in when the iframe fired `load`, and that is too
+ * early: the document has finished loading before the app has mounted and attached its
+ * message listener, so the message arrived with nobody listening and was lost. Measured,
+ * not guessed -- posting the same message a moment later worked every time.
+ *
+ * So the page says when it is ready instead of the host guessing. One message goes out and
+ * it carries nothing but the fact that this page exists, which is the only outbound message
+ * there is: everything else travels inwards.
+ */
+export function announceReady(search: string = location.search, parent: Window | null = globalThis.parent): void {
+  if (!isEmbedded(search)) return;
+  // Not when the page is the top window: posting to yourself is harmless but meaningless,
+  // and the guard makes the intent legible.
+  if (!parent || parent === globalThis.self) return;
+  parent.postMessage({ type: "hikari:ready" }, "*");
+}
+
+/**
  * Listen for text being pushed in. Returns an unsubscribe.
  *
  * A no-op that unsubscribes nothing when the page was not asked to embed, so a caller does
