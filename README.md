@@ -165,6 +165,41 @@ because something that decodes to a plausible re-encoding of itself cycles throu
 that are each new, so a **decoding** seed is refused unless it is strictly shorter than its
 parent.
 
+## On the desktop, where it can read the clipboard
+
+The same build runs as a [hikari](https://github.com/rlawoals0529/hikari) overlay bound to a
+global shortcut. Copy a token, press the key, and it is already decoded. That interaction is
+only possible outside a browser and it is the reason to have a desktop build at all.
+
+The split is the interesting part:
+
+| | Browser | Overlay |
+| --- | --- | --- |
+| Clipboard | none at all, and no permission asked | read by the host's own trusted process |
+| Gate | not applicable | the widget's manifest must say `"clipboard": true` |
+| Network | `connect-src 'none'` | the same `connect-src 'none'`, verified inside Electron |
+
+**A permission prompt is a terrible look for a tool whose whole pitch is that it wants
+nothing from you**, so the web build never asks. `check-no-network` forbids
+`navigator.clipboard` outright. In the overlay the host reads the clipboard, gated on the
+widget's own manifest, and pushes the text in by `postMessage`. Same core, two hosts, and
+the privileged one is the one the user installed on purpose.
+
+`?embed=1` is what turns the listener on, and without it the page registers no message
+listener at all. The sender cannot be verified, because a page loaded from `file://` has an
+origin of the string `"null"`, and what makes that acceptable is the direction of travel:
+text goes in and **nothing ever comes back out**, so the worst a hostile framer could do is
+type into a box you are looking at.
+
+### The Electron risk, checked rather than assumed
+
+The concern going in was that `script-src 'self'` and `connect-src 'none'` resolve
+differently for a `file://` origin, which would have meant a separate Electron-targeted
+build. It was measured in the real host instead of reasoned about, and it holds: the policy
+is present on the framed page, the app's own scripts run, and a `fetch` from inside the
+overlay is refused with `connect-src` named as the directive. The privacy guarantee is the
+same in both places.
+
 ## Running it
 
 ```bash

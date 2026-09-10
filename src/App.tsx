@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_BUDGET, analyse, type Node } from "./detect/engine";
+import { isEmbedded, onPaste } from "./embed";
 import { DETECTORS } from "./detect/registry";
 import { systemClock } from "./detect/types";
 import { ProveIt } from "./ui/ProveIt";
@@ -14,6 +15,7 @@ import { Tree } from "./ui/Tree";
  */
 export function App() {
   const [text, setText] = useState("");
+  const box = useRef<HTMLTextAreaElement>(null);
   /** Seeds the reader asked to expand, each with a budget of its own. */
   const [expanded, setExpanded] = useState<string[]>([]);
 
@@ -24,20 +26,42 @@ export function App() {
 
   const onExpand = (node: Node) => setExpanded((prev) => (prev.includes(node.text) ? prev : [...prev, node.text]));
 
+  // Summoned rather than visited: a widget host pushes the clipboard in when the overlay
+  // is shown, so a token is already decoded by the time the window appears. No listener at
+  // all without ?embed=1.
+  useEffect(
+    () =>
+      onPaste((incoming) => {
+        setText(incoming);
+        setExpanded([]);
+        box.current?.focus();
+        box.current?.select();
+      }),
+    [],
+  );
+
   const empty = text.trim() === "";
+  const embedded = isEmbedded();
 
   return (
-    <main className="page">
-      <h1>Paste it. Find out what it is.</h1>
-      <p className="lede">
-        A token, a hash, a timestamp, something encoded twice. It says what it is and expands
-        what it finds inside. This page cannot reach the network at all, so nothing you paste
-        can leave it.
-      </p>
+    <main className={embedded ? "page embedded" : "page"}>
+      {/* The overlay is summoned over whatever you were doing, so the title and the pitch
+          are noise there: you already know what you pressed the key for. */}
+      {!embedded && (
+        <>
+          <h1>Paste it. Find out what it is.</h1>
+          <p className="lede">
+            A token, a hash, a timestamp, something encoded twice. It says what it is and
+            expands what it finds inside. This page cannot reach the network at all, so
+            nothing you paste can leave it.
+          </p>
+        </>
+      )}
 
       {/* No visible label. A large empty box you can type into has never needed one, and
           the aria-label is what a screen reader actually reads. */}
       <textarea
+        ref={box}
         className="input"
         value={text}
         onChange={(e) => {
@@ -72,7 +96,7 @@ export function App() {
         )}
       </section>
 
-      <ProveIt />
+      {!embedded && <ProveIt />}
     </main>
   );
 }
