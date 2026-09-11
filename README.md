@@ -6,6 +6,8 @@ A token, a hash, a timestamp, an ID, something encoded twice. It names it, decod
 expands what it finds inside, so a JWT becomes its header and payload and the timestamp
 inside the payload becomes a date.
 
+![A JWT, decoded: the header and payload, the five pieces of evidence that identified it with what each is worth, and the caveat saying the signature was never checked](docs/screenshot.png)
+
 **Nothing leaves your browser, and that is enforced rather than promised.**
 
 ## The claim, and four ways to check it without trusting me
