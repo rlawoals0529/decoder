@@ -10,12 +10,12 @@ inside the payload becomes a date.
 
 **Nothing leaves your browser, and that is enforced rather than promised.**
 
-## The claim, and four ways to check it without trusting me
+## Verifying the privacy claim
 
 A privacy tool asking to be trusted is the wrong shape. These are in order of how little
 they need you to believe.
 
-### 1. The page cannot reach the network. Your browser enforces it
+### 1. The browser enforces it
 
 The built page carries this:
 
@@ -49,7 +49,7 @@ from a leak. Whitespace or string-splitting would have got past it, and dodging 
 check by obfuscation is worse than not having one. So the instruction moved and the check
 stayed absolute.
 
-### 2. Grep the file that is actually deployed
+### 2. Grep the deployed file
 
 Not the source. The file your browser downloaded:
 
@@ -78,7 +78,7 @@ Two findings from the first real run of it, both kept:
   minified error messages from. Never requested. Allowlisted, with that reason written next
   to it.
 
-### 3. Turn the network off and use it
+### 3. Turn the network off
 
 Open the page, go offline, paste a real secret. It still works, because there was never
 anything to fetch. **The fonts are served from this origin**, which is the part most pages
@@ -86,7 +86,7 @@ get wrong: one `<link>` to a font CDN is two requests to somebody else's server 
 your IP address and the page you came from, on every single load. Archivo and JetBrains Mono
 are here as 110 KB of woff2, which is also what lets `default-src 'none'` mean what it says.
 
-### 4. Read the tests, which are shaped like the mistakes
+### 4. Read the tests
 
 `e2e/privacy.spec.ts` records a canary, pastes it, waits, and asserts that nothing was
 requested and nothing carried it. Three of them are worth reading for what they had to be
@@ -137,7 +137,7 @@ because its first 48 bits decode to a real date and a hash has no reason to carr
 bare **v4** is, because it is random and carries nothing. Both cases are pinned by tests, in
 opposite directions.
 
-### Every reading says what it cannot tell you
+### Caveats
 
 `caveats` is a required field and the card renders it unconditionally, never behind a
 disclosure. A `certain` badge beside "signature not checked" is the normal look here, and it
@@ -156,7 +156,7 @@ Two more that matter:
   with no way to tell it apart without the repository, so it appears as one candidate among
   several rather than as its own confident reading that would be wrong most of the time.
 
-### Nesting stops, and says where
+### Budgets
 
 Depth 4, 400 nodes, 64 KB, and a 50ms deadline. Hitting one is never a silent truncation: the
 row says which budget stopped it and offers to continue from there with a fresh one, so a
@@ -167,7 +167,7 @@ because something that decodes to a plausible re-encoding of itself cycles throu
 that are each new, so a **decoding** seed is refused unless it is strictly shorter than its
 parent.
 
-## On the desktop, where it can read the clipboard
+## Desktop overlay
 
 The same build runs as a [hikari](https://github.com/rlawoals0529/hikari) overlay bound to a
 global shortcut. Copy a token, press the key, and it is already decoded. That interaction is
@@ -193,7 +193,7 @@ origin of the string `"null"`, and what makes that acceptable is the direction o
 text goes in and **nothing ever comes back out**, so the worst a hostile framer could do is
 type into a box you are looking at.
 
-### The Electron risk, checked rather than assumed
+### The Electron CSP question
 
 The concern going in was that `script-src 'self'` and `connect-src 'none'` resolve
 differently for a `file://` origin, which would have meant a separate Electron-targeted
@@ -218,7 +218,7 @@ in dev the page would appear broken. Somebody then repairs the dev server by wea
 policy, and the strongest layer of this whole thing quietly dies. So the tests point at
 `vite preview` instead, where the policy is real. Do not move them to the dev server.
 
-## No runtime dependencies but React
+## Dependencies
 
 `scripts/check-deps.mjs` fails CI if anything else appears in `dependencies`, and it runs as
 its own job so the reason a run went red is legible from the job list. Every runtime
