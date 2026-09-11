@@ -10,102 +10,9 @@ inside the payload becomes a date.
 
 **Nothing leaves your browser, and that is enforced rather than promised.**
 
-## Verifying the privacy claim
+## Try it
 
-A privacy tool asking to be trusted is the wrong shape. These are in order of how little
-they need you to believe.
-
-### 1. The browser enforces it
-
-The built page carries this:
-
-```
-default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline';
-font-src 'self'; img-src 'self' data:; connect-src 'none';
-base-uri 'none'; form-action 'none'
-```
-
-`connect-src 'none'` means the browser refuses every `fetch`, `XMLHttpRequest`,
-`WebSocket`, `EventSource` and `sendBeacon` this page could attempt, **including from code
-nobody here wrote.** That moves the guarantee off my diligence and onto your browser, which
-is the only place a claim like this can actually live.
-
-Open the console on the page and run this. It is your code, not mine, and the page never
-shipped it:
-
-```js
-fetch("https://example.com/", { method: "POST", body: "anything" })
-```
-
-It is refused, and the console names `connect-src` as the reason. If arbitrary code you
-typed cannot get out, nothing on the page can.
-
-**This line lives here rather than on the page, and the reason is worth knowing.** There was
-a button in the app that ran the upload for you, and then a copyable line printed on screen.
-`check-no-network` failed the build on both: the first contained a real `fetch` call, and
-the second contained the string `fetch(` and a remote URL. The check looks for primitives
-rather than for intent, because intent is not greppable, so it cannot tell a demonstration
-from a leak. Whitespace or string-splitting would have got past it, and dodging your own
-check by obfuscation is worse than not having one. So the instruction moved and the check
-stayed absolute.
-
-### 2. Grep the deployed file
-
-Not the source. The file your browser downloaded:
-
-```bash
-curl -s https://rlawoals0529.github.io/decoder/assets/index-*.js \
-  | node scripts/check-no-network.mjs -
-```
-
-`scripts/check-no-network.mjs` looks for `fetch(`, `XMLHttpRequest`, `WebSocket`,
-`EventSource`, `sendBeacon`, `new Image`, `importScripts(`, `navigator.clipboard`, and any
-absolute URL outside a five-entry allowlist. `npm run build` runs it against `dist/` and
-**fails the build on a single hit**, so a version that could phone home cannot be published
-by accident.
-
-It looks for the primitives rather than for intent, because intent is not greppable. A false
-positive costs one line explaining why a string is allowed. A false negative makes the front
-page a lie.
-
-Two findings from the first real run of it, both kept:
-
-- **Vite's module-preload polyfill contains the only `fetch(` in the bundle.** It is off
-  now. `connect-src 'none'` refused that fetch as readily as any other, so it was already
-  dead code, and a build containing a fetch call cannot pass a check whose whole point is
-  that you can grep the deployed file and find none.
-- **React's production build carries `https://react.dev/errors/`** in the string it builds
-  minified error messages from. Never requested. Allowlisted, with that reason written next
-  to it.
-
-### 3. Turn the network off
-
-Open the page, go offline, paste a real secret. It still works, because there was never
-anything to fetch. **The fonts are served from this origin**, which is the part most pages
-get wrong: one `<link>` to a font CDN is two requests to somebody else's server carrying
-your IP address and the page you came from, on every single load. Archivo and JetBrains Mono
-are here as 110 KB of woff2, which is also what lets `default-src 'none'` mean what it says.
-
-### 4. Read the tests
-
-`e2e/privacy.spec.ts` records a canary, pastes it, waits, and asserts that nothing was
-requested and nothing carried it. Three of them are worth reading for what they had to be
-changed to:
-
-**`sendBeacon` returns `true` when the browser has blocked it.** Measured in Chromium 153.
-No two of these APIs report a refusal the same way: `fetch` rejects, a `WebSocket`
-constructor does not throw and fires an error event, `EventSource` and `XMLHttpRequest` do
-not throw at all, and `sendBeacon` claims success having sent nothing. So refusal is asserted
-through the `securitypolicyviolation` event, which is the browser naming what it stopped,
-and which is uniform across all five.
-
-**A rejected cross-origin `fetch` proves nothing.** CORS rejects it on any page with or
-without a policy. That test stayed green with the entire policy removed until it asserted
-the violated directive. Found by removing the policy and watching which tests noticed.
-
-**A font test that only watches requests passes on a 404.** The URL is still same-origin, so
-"no third-party font" stays true while the page silently falls back to a system face. It
-checks response status now, and that the face is really usable.
+**[rlawoals0529.github.io/decoder](https://rlawoals0529.github.io/decoder/)**
 
 ## What it reads
 
@@ -166,6 +73,37 @@ Termination is structural rather than a counter. A visited set is not enough on 
 because something that decodes to a plausible re-encoding of itself cycles through values
 that are each new, so a **decoding** seed is refused unless it is strictly shorter than its
 parent.
+
+## Privacy, enforced rather than promised
+
+The built page carries this policy:
+
+```
+default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline';
+font-src 'self'; img-src 'self' data:; connect-src 'none';
+base-uri 'none'; form-action 'none'
+```
+
+`connect-src 'none'` means the browser refuses every `fetch`, `XMLHttpRequest`,
+`WebSocket`, `EventSource` and `sendBeacon` the page could attempt, **including from code
+nobody here wrote.** That puts the guarantee on your browser rather than on my diligence.
+
+Check it yourself. Open the console on the live page and run this, which is your code and
+never shipped with the app:
+
+```js
+fetch("https://example.com/", { method: "POST", body: "anything" })
+```
+
+It is refused, and the console names `connect-src` as the reason. You can also grep the file
+your browser actually downloaded, rather than the source:
+
+```bash
+curl -s https://rlawoals0529.github.io/decoder/assets/index-*.js \
+  | node scripts/check-no-network.mjs -
+```
+
+`npm run e2e` is the suite that pins this, including a run with the network disabled.
 
 ## Desktop overlay
 
