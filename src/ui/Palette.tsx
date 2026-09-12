@@ -31,6 +31,12 @@ export function Palette() {
         onClick={() => setOpen((v) => !v)}
       >
         <span className="palette-chip" aria-hidden="true" data-theme={theme} />
+        {/*
+          The toggle says what it DOES, not only which palette is on. Without the word the
+          button and the option for the same palette share an accessible name, so a screen
+          reader announces "Sakura Lake button" twice for two different controls.
+        */}
+        <span className="sr-only">Palette: </span>
         {current?.label ?? "Palette"}
       </button>
 
