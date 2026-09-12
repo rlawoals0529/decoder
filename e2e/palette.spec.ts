@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { describeFailures, probeContrast } from "./contrast-probe.js";
+import themes from "../src/theme/palettes.json" with { type: "json" };
 
 /* The picker itself is covered by e2e/palette-picker.spec.ts, vendored with the component,
    so the same guard runs in every app that uses it rather than in this one. */
@@ -10,7 +11,7 @@ test("no text on the page is below AA contrast, in any palette", async ({ page }
   // another palette, which is the exact shape of mistake that puts foreign colours on a page.
   await page.getByRole("button", { name: /^Palette:/ }).click();
 
-  const probe = await probeContrast(page);
+  const probe = await probeContrast(page, themes);
 
   // A selector that stopped matching would make this pass by measuring nothing.
   expect(probe.styles).toBeGreaterThan(9);
