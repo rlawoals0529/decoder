@@ -4,7 +4,8 @@ import { announceReady, isEmbedded, onPaste } from "./embed";
 import { DETECTORS } from "./detect/registry";
 import { systemClock } from "./detect/types";
 import { ProveIt } from "./ui/ProveIt";
-import { Palette } from "./ui/Palette";
+import { Palette } from "./lib/palette.js";
+import palettes from "./theme/palettes.json";
 import { Tree } from "./ui/Tree";
 
 /**
@@ -101,7 +102,7 @@ export function App() {
       </section>
 
       {!embedded && <ProveIt />}
-      {!embedded && <Palette />}
+      {!embedded && <Palette themes={palettes} storageKey="decoder:theme" />}
     </main>
   );
 }
