@@ -1,5 +1,5 @@
 @import "./theme/fonts.css";
-@import "./theme/palette.css";
+@import "./theme/palettes.css";
 @import "./theme/base.css";
 @import "./theme/layout-flat.css";
 @import "./theme/motion.css";
@@ -281,3 +281,34 @@ button.primary:disabled { background: var(--panel); color: var(--dim); }
 .refused code { color: var(--accent-2); }
 .leaked { margin-top: 20px; color: var(--err, #ff6b6b); }
 .prove-note { font-size: 12.5px; color: var(--dim); opacity: .8; margin-top: 28px; }
+
+/* ---- Palette picker ----------------------------------------------------------------------
+   Quiet by default. This page is one box and a reading of it, so fifteen colour chips above
+   the fold would be the loudest thing on it. */
+
+.palette { margin-top: 3rem; font-size: 0.85rem; }
+
+.palette-toggle,
+.palette-list button {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: none; border: 1px solid var(--edge); border-radius: 999px;
+  padding: 0.3rem 0.8rem; color: var(--dim); font: inherit; cursor: pointer;
+  min-height: 34px;
+}
+.palette-toggle:hover,
+.palette-list button:hover { color: var(--fg); border-color: var(--accent); }
+.palette-list button[aria-pressed="true"] { border-color: var(--accent); color: var(--fg); }
+
+/* Each chip paints in the palette it selects, because the button carries its own data-theme.
+   Without that they would be fifteen chips in the colour you are already looking at. */
+.palette-chip {
+  width: 0.9rem; height: 0.9rem; border-radius: 50%;
+  background: var(--accent); border: 1px solid var(--edge); flex: none;
+}
+
+.palette-list { margin-top: 0.8rem; display: grid; gap: 0.9rem; }
+.palette-list fieldset { border: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.palette-list legend {
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--dim); margin-bottom: 0.4rem;
+}
