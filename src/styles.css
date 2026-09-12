@@ -174,36 +174,99 @@ h1 {
 
 .proves { font-size: 14px; line-height: 1.65; max-width: 66ch; margin: 0 0 14px; text-wrap: pretty; }
 
-.evidence, .caveats { list-style: none; margin: 0; padding: 0; max-width: 70ch; }
+/* ---- The tally ----------------------------------------------------------------------
+   Every reason with its weight drawn beside it, on one scale shared by the whole page, with
+   evidence AGAINST running left of a zero line. Bits are additive, so length is the honest
+   encoding: a column of "+4" and "-2" is a table you have to add up, and the same numbers
+   drawn are a shape. */
+
+.evidence { list-style: none; margin: 0; padding: 0; max-width: 70ch; }
 .evidence li {
-  display: flex;
-  gap: 10px;
+  /* One bit is this wide, everywhere on the page. */
+  --bit: 6px;
+  display: grid;
+  grid-template-columns: 3.4ch calc(var(--bit) * 16) 1fr;
+  gap: 12px;
+  align-items: baseline;
   font-size: 13px;
   line-height: 1.6;
   color: var(--dim);
-  padding: 2px 0;
+  padding: 3px 0;
 }
 .ev-bits {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  min-width: 2.6ch;
   text-align: right;
   color: var(--accent-2);
 }
 /* Evidence can argue against a reading, and that has to look different from evidence for
    it or the list reads as one-sided. */
-.ev-bits[data-sign="against"] { color: var(--warn, var(--dim)); }
+.evidence li[data-sign="against"] .ev-bits { color: var(--warn, var(--dim)); }
 
-.caveats { margin-top: 16px; }
-.caveats li {
+/* The scale: a zero line down the middle, bars growing out from it. */
+.ev-scale {
+  position: relative;
+  align-self: center;
+  height: 9px;
+}
+/* The zero line. Taller than the bars and in the same ink as the notes, because it is the
+   axis every bar is read against - at hairline weight it read as a gap between two columns
+   rather than as the origin. It stays put on every finding whether or not that one has any
+   evidence against it: a scale that moves is a scale you cannot compare across. */
+.ev-scale::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--dim);
+}
+.ev-scale i {
+  position: absolute;
+  top: 2px;
+  height: 5px;
+  border-radius: 1px;
+  /* From the zero line rightwards, which is what "for" means here. */
+  left: 50%;
+  background: var(--accent-2);
+}
+.evidence li[data-sign="against"] .ev-scale i {
+  left: auto;
+  right: 50%;
+  background: var(--warn, var(--dim));
+}
+
+/* ---- Limits ---------------------------------------------------------------------------
+   What the reading does not establish, above the reasons it does. A "certain" badge beside
+   "signature not checked" is only safe while both are read, and a reader who has gone down
+   the evidence has already decided what the finding means before meeting a footnote that
+   changes it. So this is a marked block near the top, not a note at the bottom. */
+
+.limits {
+  margin: 0 0 18px;
+  padding: 12px 16px;
+  max-width: 70ch;
+  border-left: 3px solid var(--warn, var(--dim));
+  background: color-mix(in srgb, var(--warn, var(--dim)) 8%, transparent);
+  border-radius: 0 3px 3px 0;
+}
+.limits-label {
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--warn, var(--dim));
+}
+.limits ul { list-style: none; margin: 0; padding: 0; }
+.limits li {
   font-size: 13px;
   line-height: 1.65;
-  color: var(--dim);
-  padding-left: 14px;
-  border-left: 2px solid color-mix(in srgb, var(--warn, var(--dim)) 45%, transparent);
-  margin-top: 10px;
+  color: var(--fg);
   text-wrap: pretty;
 }
+.limits li + li { margin-top: 8px; }
 
 /* ---- Peers ------------------------------------------------------------------------
    The one outlined thing on the page. An outline means "this one", and it stops meaning

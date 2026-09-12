@@ -16,7 +16,7 @@ export default defineConfig({
   reporter: process.env.CI ? [["github"], ["list"]] : [["list"]],
   timeout: 30_000,
   use: {
-    baseURL: "http://127.0.0.1:4176",
+    baseURL: "http://127.0.0.1:4177",
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
@@ -25,8 +25,8 @@ export default defineConfig({
     // defaults to "localhost", which resolves to ::1 on some machines, and then the
     // 127.0.0.1 health check waits out its whole timeout against a server that is up and
     // listening somewhere else.
-    command: "npm run build && npm run preview -- --host 127.0.0.1 --port 4176 --strictPort",
-    url: "http://127.0.0.1:4176",
+    command: "npm run build && npm run preview -- --host 127.0.0.1 --port 4177 --strictPort",
+    url: "http://127.0.0.1:4177",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

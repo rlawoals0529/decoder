@@ -10,8 +10,11 @@ import type { Scored } from "../detect/types";
  * the count sits inside the badge row where the confidence is, rather than somewhere the eye
  * can skip.
  *
- * The evidence is a list of sentences, not a bar or a percentage. The reader knows where the
- * string came from and this does not, so the notes are what let them overrule the ranking.
+ * Every reason still carries its sentence. The reader knows where the string came from and
+ * this does not, so the notes are what let them overrule the ranking - but the sentence now
+ * comes with the weight drawn beside it, on one scale shared by every reading on the page,
+ * with evidence AGAINST running the other way from a zero line. A column of "+4" and "-2"
+ * is a table you have to add up; the same numbers drawn are a shape you can read.
  */
 export function Finding({ finding }: { finding: Scored }) {
   const { kind, band, bits, evidence, proves, caveats, detail } = finding;
@@ -35,29 +38,55 @@ export function Finding({ finding }: { finding: Scored }) {
         </span>
       </header>
 
+      {/*
+       * What this reading does NOT establish, before the reasons it does.
+       *
+       * A forensic report puts its limits at the top, and this one has to: "certain" beside
+       * "signature not checked" is only safe while both are read, and a reader who has
+       * already gone down the evidence has decided what the finding means before reaching a
+       * footnote that changes it.
+       */}
+      {caveats.length > 0 && (
+        <div className="limits" data-testid={`caveat-list-${kind}`}>
+          <p className="limits-label">Not established</p>
+          <ul>
+            {caveats.map((c, i) => (
+              <li key={i}>{c}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {detail !== undefined && detail !== "" && <pre className="detail">{detail}</pre>}
 
       <p className="proves">{proves}</p>
 
       <ul className="evidence">
         {evidence.map((e, i) => (
-          <li key={i}>
-            <span className="ev-bits" data-sign={e.bits < 0 ? "against" : "for"}>
-              {e.bits > 0 ? `+${e.bits}` : e.bits}
+          <li key={i} data-sign={e.bits < 0 ? "against" : "for"}>
+            <span className="ev-bits">{e.bits > 0 ? `+${e.bits}` : e.bits}</span>
+            {/* The weight, drawn. Width is bits at a fixed rate shared by every finding on
+                the page, so two readings can be compared by looking rather than by adding.
+                aria-hidden because the number beside it already says the same thing. */}
+            <span className="ev-scale" aria-hidden="true">
+              <i style={{ width: `calc(${Math.min(Math.abs(e.bits), EV_CAP)} * var(--bit))` }} />
             </span>
-            {e.note}
+            <span className="ev-note">{e.note}</span>
           </li>
-        ))}
-      </ul>
-
-      <ul className="caveats" data-testid={`caveat-list-${kind}`}>
-        {caveats.map((c, i) => (
-          <li key={i}>{c}</li>
         ))}
       </ul>
     </article>
   );
 }
+
+/**
+ * Where a bar stops growing.
+ *
+ * Nothing a detector emits is worth more than this, and a runaway value would set the scale
+ * for the whole page and flatten every other bar into a stub. Capping is a lie about one
+ * number; normalising to the largest would be a lie about all of them.
+ */
+const EV_CAP = 8;
 
 /**
  * Two or more readings that the evidence cannot separate, shown as one unit joined by "or".

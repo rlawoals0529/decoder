@@ -109,3 +109,75 @@ test("nothing recognised is an answer, not an empty screen", async ({ page }) =>
   await page.getByTestId("input").fill("just some words that are not anything");
   await expect(page.getByTestId("findings")).toContainText("not that it failed to look");
 });
+
+test("the server under test is this app, not another app on the same port", async ({ page }) => {
+  await page.goto("/");
+  /*
+   * playwright.config.ts reuses a server that is already listening, so a port two projects
+   * share means one project's running preview quietly answers the other's tests. That has
+   * happened here twice, and once it produced a completely green run against the wrong page.
+   * Ports are unique now; this is what catches the next way it goes wrong.
+   */
+  await expect(page).toHaveTitle(/^decoder/);
+});
+
+test("what a reading cannot establish comes before the reasons it can", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("input").fill(JWT);
+
+  const card = page.getByTestId("finding-jwt");
+  await expect(card.locator(".limits")).toBeVisible();
+
+  // Order matters and is the whole safety argument: "certain" beside "signature not checked"
+  // is only safe while both are read, and a reader who has been down the evidence has
+  // already decided what the finding means before meeting a footnote that changes it.
+  const limitsFirst = await card.evaluate((el) => {
+    const limits = el.querySelector(".limits")!;
+    const evidence = el.querySelector(".evidence")!;
+    return (limits.compareDocumentPosition(evidence) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  });
+  expect(limitsFirst).toBe(true);
+});
+
+test("every reason is weighed on one scale, with evidence against on the other side of zero", async ({ page }) => {
+  await page.goto("/");
+  // Mixed-case hex argues against itself, which is the case the axis exists for.
+  await page.getByTestId("input").fill("D41D8cd98f00b204E9800998ecf8427E");
+  await expect(page.getByTestId("finding-hex")).toBeVisible();
+
+  const rows = await page.getByTestId("finding-hex").locator(".evidence li").evaluateAll((els) =>
+    els.map((el) => {
+      const bar = el.querySelector(".ev-scale i") as HTMLElement;
+      const axis = el.querySelector(".ev-scale")!.getBoundingClientRect();
+      const box = bar.getBoundingClientRect();
+      return {
+        bits: Number(el.querySelector(".ev-bits")!.textContent),
+        width: Math.round(box.width),
+        // Which side of the zero line the bar grows from.
+        side: box.left + box.width <= axis.left + axis.width / 2 + 1 ? "left" : "right",
+        sign: el.getAttribute("data-sign"),
+      };
+    }),
+  );
+
+  expect(rows.length).toBeGreaterThan(2);
+  expect(rows.some((r) => r.bits < 0), "no evidence against, so this proves nothing").toBe(true);
+
+  for (const r of rows) {
+    // Length is bits, at one rate. Two readings are comparable by looking, not by adding.
+    expect(r.width, `${r.bits} bits drew ${r.width}px`).toBe(Math.abs(r.bits) * 6);
+    expect(r.side).toBe(r.bits < 0 ? "left" : "right");
+    expect(r.sign).toBe(r.bits < 0 ? "against" : "for");
+  }
+
+  // And the rate is the same on a different finding, or the scale is per-card and says
+  // nothing about which reason is worth more.
+  await page.getByTestId("input").fill(JWT);
+  const elsewhere = await page.getByTestId("finding-jwt").locator(".evidence li").first().evaluateAll((els) =>
+    els.map((el) => ({
+      bits: Number(el.querySelector(".ev-bits")!.textContent),
+      width: Math.round((el.querySelector(".ev-scale i") as HTMLElement).getBoundingClientRect().width),
+    })),
+  );
+  for (const r of elsewhere) expect(r.width).toBe(Math.abs(r.bits) * 6);
+});

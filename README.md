@@ -28,10 +28,16 @@ any other; the engine walks what each one emits, breadth first, under a budget.
 
 ### Confidence is a list of reasons
 
-Every reading shows what it is worth in bits and why, one line per reason, and evidence can
-argue against a reading as well as for it. A float confidence was rejected: "87% likely MD5"
-is precision nobody can justify, and the notes are the part you can actually use, because
-you know where the string came from and this does not.
+Every reading shows what it is worth in bits and why, one line per reason, with the weight
+drawn beside it on one scale shared by the whole page - evidence against running the other
+way from a zero line. A float confidence was rejected: "87% likely MD5" is precision nobody
+can justify, and the notes are the part you can actually use, because you know where the
+string came from and this does not.
+
+**What a reading cannot establish comes before the reasons it can.** "Certain" beside
+"signature not checked" is only safe while both are read, and a reader who has been down the
+evidence has already decided what the finding means before meeting a footnote that changes
+it, so the limits are a marked block at the top rather than a note at the bottom.
 
 **Ambiguity is shown rather than resolved.** A bare 32-character hex string is equally well
 explained as an MD5 and as a UUID with its dashes stripped, so both appear, joined by "or",
