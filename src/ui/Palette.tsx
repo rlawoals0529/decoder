@@ -3,7 +3,7 @@ import manifest from "../theme/palettes.json";
 import { createThemeStore, grouped, type Theme } from "../lib/theme";
 
 const THEMES = manifest as Theme[];
-const store = createThemeStore(THEMES, "wisteria-alley", "decoder:theme");
+const store = createThemeStore(THEMES, "twilight-comet", "decoder:theme");
 
 /**
  * A disclosure rather than a row of fifteen swatches.
