@@ -280,7 +280,9 @@ button.primary:disabled { background: var(--panel); color: var(--dim); }
 .refused { margin-top: 20px; color: var(--fg); }
 .refused code { color: var(--accent-2); }
 .leaked { margin-top: 20px; color: var(--err, #ff6b6b); }
-.prove-note { font-size: 12.5px; color: var(--dim); opacity: .8; margin-top: 28px; }
+/* No opacity on top of --dim. That token is already the quiet one, corrected to clear 4.5:1
+   and no more, so a fade on top of it lands under: this note measured 3.28:1. */
+.prove-note { font-size: 12.5px; color: var(--dim); margin-top: 28px; }
 
 /* ---- Palette picker ----------------------------------------------------------------------
    Quiet by default. This page is one box and a reading of it, so fifteen colour chips above
@@ -306,7 +308,12 @@ button.primary:disabled { background: var(--panel); color: var(--dim); }
   background: var(--accent); border: 1px solid var(--edge); flex: none;
 }
 
-.palette-list { margin-top: 0.8rem; display: grid; gap: 0.9rem; }
+/* `display` on a class beats the user agent's `[hidden] { display: none }`, because author
+   styles win over the UA sheet whatever the specificity. So this list was permanently open:
+   the button said aria-expanded="false" over fifteen visible, tabbable options. Guarding the
+   rule is the fix; `[hidden] { display: none !important }` would work too and would hide the
+   next bug of this shape instead of failing on it. */
+.palette-list:not([hidden]) { margin-top: 0.8rem; display: grid; gap: 0.9rem; }
 .palette-list fieldset { border: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .palette-list legend {
   font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
