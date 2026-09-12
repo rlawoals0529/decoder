@@ -1,21 +1,14 @@
 <!doctype html>
-<html lang="en">
+<!-- data-theme on the element rather than from an inline script. The build injects a CSP of
+     script-src 'self' with no unsafe-inline, so an inline script is refused outright; the page's
+     privacy guarantee is worth more than a first-paint nicety for returning visitors who picked
+     a different palette. -->
+<html lang="en" data-theme="twilight-comet">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>decoder - paste anything, find out what it is</title>
 <meta name="description" content="One box. Paste a token, a hash, a timestamp, an encoded blob, and it says what it is and what is inside it. Nothing leaves your browser, and the page cannot reach the network at all.">
-<script>
-  /* Before first paint, so the page never shows one palette and swaps to another.
-     Every palette block in palettes.css declares its own color-scheme, so setting the attribute
-     is enough; the module later sets it again through the store, which is a no-op when they
-     agree. Wrapped because localStorage throws outright in a private window. */
-  (function () {
-    var t;
-    try { t = localStorage.getItem("decoder:theme"); } catch (e) {}
-    document.documentElement.setAttribute("data-theme", t || "twilight-comet");
-  })();
-</script>
 </head>
 <body class="grain"><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>
 </html>
